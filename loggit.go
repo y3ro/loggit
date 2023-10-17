@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+  "os/exec"
 	"fmt"
 	"io"
 	"log"
@@ -107,8 +108,38 @@ func newVersion(commitMsgPath string) (string, error) {
 
   versionMatch := config.VersionRegexp.Find(commitMsgBytes)  
   if (len(versionMatch) == 0) {
-    return "", fmt.Errorf("Invalid format for new version in this commit")
+    return "", fmt.Errorf("Invalid format for new version in this commit") // TODO: this should be fatal
   }
 
   return string(versionMatch), nil
+}
+
+func firstCommitHash() string {
+    cmd := exec.Command("git", "rev-list", "--max-parents=0", "HEAD")
+    out, err := cmd.Output()
+    if err != nil {
+      log.Fatalln("Falling back to first commit, there was an error")
+    }
+
+    return string(out)
+}
+
+// TODO: these "getters" should use a verb to signal possible errors
+func prevBumpCommitHash() string {
+  grepArg := "--grep=" + config.BumpVersionMsg
+  formatArg := "--pretty=format:%H"
+
+  cmd := exec.Command("git", "log", grepArg, "-n", "1", formatArg)
+  out, err := cmd.Output()
+  if err != nil {
+    log.Fatalln("Could not read the previous bump-commit hash")
+  }
+
+  outStr := string(out)
+  outLines := strings.Split(outStr, "\n")
+  if (len(outLines) == 0) {
+    return firstCommitHash()
+  }
+
+  return outLines[0]
 }
