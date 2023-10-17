@@ -1,13 +1,15 @@
 package main
 
 import (
-  "fmt"
-  "io"
-  "encoding/json"
-  "os"
-  "path/filepath"
-  "regexp"
-  "runtime"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"os"
+	"path/filepath"
+	"regexp"
+	"runtime"
+	"strings"
 )
 
 const (
@@ -85,4 +87,28 @@ func readConfig() error {
 	}
 
 	return nil
+}
+
+func newVersion(commitMsgPath string) (string, error) {
+  commitMsgFile, err := os.Open(commitMsgPath)
+  if err != nil {
+    log.Fatalln("Could not open the commit message file")
+  }
+ 
+	commitMsgBytes, err := io.ReadAll(commitMsgFile)
+	if err != nil {
+    log.Fatalln("Could not read the commit message")
+	}
+
+  commitMsg := string(commitMsgBytes)
+  if (!strings.HasPrefix(commitMsg, config.BumpVersionMsg)) {
+    return "", fmt.Errorf("No new version in this commit")
+  }
+
+  versionMatch := config.VersionRegexp.Find(commitMsgBytes)  
+  if (len(versionMatch) == 0) {
+    return "", fmt.Errorf("Invalid format for new version in this commit")
+  }
+
+  return string(versionMatch), nil
 }
