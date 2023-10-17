@@ -1,6 +1,7 @@
 package main
 
 import (
+  "bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,7 +20,7 @@ const (
   defaultVersionRegexStr = "\\d+\\.\\d+\\.\\d+"
   defaultLogGitTrailer = "log:" // TODO: add space
   defaultChangelogRelativePath = "CHANGELOG.md"
-  defaultVersionHeader = "## Version "
+  defaultVersionHeader = "# Version "
   configFileName = "loggit.json"
 )
 
@@ -175,4 +176,55 @@ func collectLogMsgs(prevCommitHash string) []string {
 func versionLogHeader(version string) string {
   today := time.Now().Format("2006-01-02")
   return config.VersionHeader + version + " - " + today
+}
+
+func writeTempLogFile(tempLogFile *os.File, newVersionHeader string, 
+    newLogLines []string) {
+  logFile, err := os.Open(config.ChangelogRelativePath)
+  if err != nil {
+    log.Fatalln("Could not open the changelog file")
+  }
+  defer logFile.Close()
+
+  _, err = tempLogFile.WriteString(newVersionHeader + "\n")
+
+  for i := 0; i < len(newLogLines); i++ {
+    _, err = tempLogFile.WriteString("* " + newLogLines[i] + "\n")
+  }
+
+  _, err = tempLogFile.WriteString("\n")
+
+  scanner := bufio.NewScanner(logFile)
+  for scanner.Scan() {
+    _, err = tempLogFile.WriteString(scanner.Text())
+  }
+
+  if err := scanner.Err(); err != nil {
+    log.Fatal(err)
+  }
+  tempLogFile.Sync()
+}
+
+func AppendToChangelog(commitMsgPath string) {
+  newVersion, err := newVersion(commitMsgPath)
+  if err != nil {
+    log.Fatal(err)
+  }
+  newVersionHeader := versionLogHeader(newVersion)
+
+  prevHash := prevBumpCommitHash()
+  logMsgs := collectLogMsgs(prevHash)
+
+  tempFile, err := os.CreateTemp("", "loggit-")
+  if err != nil {
+    log.Fatalln("Could not create a temporary file")
+  }
+  defer tempFile.Close()
+
+  writeTempLogFile(tempFile, newVersionHeader, logMsgs)
+
+  err = os.Rename(tempFile.Name(), config.ChangelogRelativePath)
+  if err != nil {
+    log.Fatal(err)
+  }
 }
