@@ -228,3 +228,15 @@ func AppendToChangelog(commitMsgPath string) {
     log.Fatal(err)
   }
 }
+
+func main() {
+  err := readConfig()
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  if len(os.Args) == 0 {
+    log.Fatal("Please provide the commit message file")
+  }
+  AppendToChangelog(os.Args[0])
+}
