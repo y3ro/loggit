@@ -137,9 +137,36 @@ func prevBumpCommitHash() string {
 
   outStr := string(out)
   outLines := strings.Split(outStr, "\n")
-  if (len(outLines) == 0) {
+  if (len(outLines) == 0) { // TODO: no parenthesis
     return firstCommitHash()
   }
 
   return outLines[0]
+}
+
+// TODO: check if trimming is necessary
+func collectLogMsgs(prevCommitHash string) []string {
+  commitsInterval := prevCommitHash + "..HEAD"
+  grepArg := "--grep=" + config.LogGitTrailer
+  formatArg := "--pretty=format:%b"
+
+  cmd := exec.Command("git", "log", commitsInterval, grepArg, formatArg)
+  out, err := cmd.Output()
+  if err != nil {
+    log.Fatalln("Failed to collect log messages")
+  }
+
+  outStr := string(out)
+  outLines := strings.Split(outStr, "\n")
+  gitTrailerLen := len(config.LogGitTrailer)
+
+  var logMsgs []string
+  for i := 0; i < len(outLines); i++ {
+    line := outLines[i]
+    if strings.HasPrefix(line, config.LogGitTrailer) {
+      logMsgs = append(logMsgs, line[gitTrailerLen:])
+    }
+  }
+
+  return logMsgs
 }
