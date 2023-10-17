@@ -2,21 +2,22 @@ package main
 
 import (
 	"encoding/json"
-  "os/exec"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 )
 
 const (
   defaultBumpVersionMsg = "Bump version"
   defaultVersionRegexStr = "\\d+\\.\\d+\\.\\d+"
-  defaultLogGitTrailer = "log:"
+  defaultLogGitTrailer = "log:" // TODO: add space
   defaultChangelogRelativePath = "CHANGELOG.md"
   defaultVersionHeader = "## Version "
   configFileName = "loggit.json"
@@ -169,4 +170,9 @@ func collectLogMsgs(prevCommitHash string) []string {
   }
 
   return logMsgs
+}
+
+func versionLogHeader(version string) string {
+  today := time.Now().Format("2006-01-02")
+  return config.VersionHeader + version + " - " + today
 }
