@@ -251,8 +251,8 @@ func main() {
     log.Fatal(err)
   }
 
-  if len(os.Args) == 0 {
+  if len(os.Args) == 1 {
     log.Fatal("Please provide the commit message file")
   }
-  AppendToChangelog(os.Args[0])
+  AppendToChangelog(os.Args[1])
 }
