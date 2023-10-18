@@ -220,7 +220,8 @@ func writeTempLogFile(tempLogFile *os.File, newVersionHeader string,
 func AppendToChangelog(commitMsgPath string) {
   newVersion, err := newVersion(commitMsgPath)
   if err != nil {
-    log.Println(err)
+    fmt.Println(err)
+    os.Exit(0)
   }
   newVersionHeader := versionLogHeader(newVersion)
 
