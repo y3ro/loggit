@@ -182,7 +182,10 @@ func writeTempLogFile(tempLogFile *os.File, newVersionHeader string,
     newLogLines []string) {
   logFile, err := os.Open(config.ChangelogRelativePath)
   if err != nil {
-    log.Fatalln("Could not open the changelog file")
+    logFile, err = os.Create(config.ChangelogRelativePath)
+    if err != nil {
+      log.Fatalln("Could not open nor create the changelog file")
+    }
   }
   defer logFile.Close()
 
