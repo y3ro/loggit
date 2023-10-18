@@ -139,7 +139,7 @@ func prevBumpCommitHash() string {
 
   outStr := string(out)
   outLines := strings.Split(outStr, "\n")
-  if (len(outLines) == 0) { // TODO: no parenthesis
+  if len(outLines) == 1 && outLines[0] == "" { // TODO: no parenthesis
     return firstCommitHash()
   }
 
