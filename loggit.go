@@ -187,16 +187,28 @@ func writeTempLogFile(tempLogFile *os.File, newVersionHeader string,
   defer logFile.Close()
 
   _, err = tempLogFile.WriteString(newVersionHeader + "\n")
+  if err != nil {
+    log.Fatal(err)
+  }
 
   for i := 0; i < len(newLogLines); i++ {
     _, err = tempLogFile.WriteString("* " + newLogLines[i] + "\n")
+    if err != nil {
+      log.Fatal(err)
+    }
   }
 
   _, err = tempLogFile.WriteString("\n")
+  if err != nil {
+    log.Fatal(err)
+  }
 
   scanner := bufio.NewScanner(logFile)
   for scanner.Scan() {
     _, err = tempLogFile.WriteString(scanner.Text())
+    if err != nil {
+      log.Fatal(err)
+    }
   }
 
   if err := scanner.Err(); err != nil {
