@@ -116,16 +116,6 @@ func newVersion(commitMsgPath string) (string, error) {
   return string(versionMatch), nil
 }
 
-func firstCommitHash() string {
-    cmd := exec.Command("git", "rev-list", "--max-parents=0", "HEAD")
-    out, err := cmd.Output()
-    if err != nil {
-      log.Fatalln("Falling back to first commit, there was an error")
-    }
-
-    return strings.TrimSpace(string(out))
-}
-
 // TODO: these "getters" should use a verb to signal possible errors
 func prevBumpCommitHash() string {
   grepArg := "--grep=" + config.BumpVersionMsg
@@ -140,14 +130,18 @@ func prevBumpCommitHash() string {
   outStr := string(out)
   outLines := strings.Split(outStr, "\n")
   if len(outLines) == 1 && outLines[0] == "" { // TODO: no parenthesis
-    return firstCommitHash()
+    return ""
   }
 
   return outLines[0]
 }
 
 func collectLogMsgs(prevCommitHash string) []string {
-  commitsInterval := prevCommitHash + "..HEAD"
+  lowerLimit := ""
+  if len(prevCommitHash) > 0 {
+    lowerLimit = prevCommitHash + ".."
+  }
+  commitsInterval := lowerLimit + "HEAD"
   grepArg := "--grep=" + config.LogGitTrailer
   formatArg := "--pretty=format:%b"
 
