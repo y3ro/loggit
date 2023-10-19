@@ -203,7 +203,7 @@ func writeTempLogFile(tempLogFile *os.File, newVersionHeader string,
 
   scanner := bufio.NewScanner(logFile)
   for scanner.Scan() {
-    _, err = tempLogFile.WriteString(scanner.Text())
+    _, err = tempLogFile.WriteString(scanner.Text() + "\n")
     if err != nil {
       log.Fatal(err)
     }
