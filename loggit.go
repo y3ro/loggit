@@ -123,7 +123,7 @@ func firstCommitHash() string {
       log.Fatalln("Falling back to first commit, there was an error")
     }
 
-    return string(out)
+    return strings.TrimSpace(string(out))
 }
 
 // TODO: these "getters" should use a verb to signal possible errors
@@ -146,7 +146,6 @@ func prevBumpCommitHash() string {
   return outLines[0]
 }
 
-// TODO: check if trimming is necessary
 func collectLogMsgs(prevCommitHash string) []string {
   commitsInterval := prevCommitHash + "..HEAD"
   grepArg := "--grep=" + config.LogGitTrailer
@@ -158,7 +157,7 @@ func collectLogMsgs(prevCommitHash string) []string {
     log.Fatalln("Failed to collect log messages")
   }
 
-  outStr := string(out)
+  outStr := strings.TrimSpace(string(out))
   outLines := strings.Split(outStr, "\n")
   gitTrailerLen := len(config.LogGitTrailer)
 
