@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"io"
 	"log"
+  "math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
+  "strconv"
 	"strings"
 	"time"
 )
@@ -224,7 +226,8 @@ func AppendToChangelog(commitMsgPath string) {
   prevHash := prevBumpCommitHash()
   logMsgs := collectLogMsgs(prevHash)
 
-  tempFile, err := os.CreateTemp("", "loggit-")
+  randNumber := strconv.Itoa(rand.Int())
+  tempFile, err := os.Create("loggit-" + randNumber)
   if err != nil {
     log.Fatalln("Could not create a temporary file")
   }
