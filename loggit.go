@@ -20,7 +20,7 @@ import (
 const (
   defaultBumpVersionMsg = "Bump version"
   defaultVersionRegexStr = "\\d+\\.\\d+\\.\\d+"
-  defaultLogGitTrailer = "log:" // TODO: add space
+  defaultLogGitTrailer = "log:"
   defaultChangelogRelativePath = "CHANGELOG.md"
   defaultVersionHeader = "# Version "
   configFileName = "loggit.json"
@@ -94,7 +94,7 @@ func readConfig() error {
 	return nil
 }
 
-func newVersion(commitMsgPath string) (string, error) {
+func getNewVersion(commitMsgPath string) (string, error) {
   commitMsgFile, err := os.Open(commitMsgPath)
   if err != nil {
     log.Fatalln("Could not open the commit message file")
@@ -106,20 +106,19 @@ func newVersion(commitMsgPath string) (string, error) {
 	}
 
   commitMsg := string(commitMsgBytes)
-  if (!strings.HasPrefix(commitMsg, config.BumpVersionMsg)) {
+  if !strings.HasPrefix(commitMsg, config.BumpVersionMsg) {
     return "", fmt.Errorf("No new version in this commit")
   }
 
   versionMatch := config.VersionRegexp.Find(commitMsgBytes)  
-  if (len(versionMatch) == 0) {
-    return "", fmt.Errorf("Invalid format for new version in this commit") // TODO: this should be fatal
+  if len(versionMatch) == 0 {
+    log.Fatalln("Invalid format for new version in this commit")
   }
 
   return string(versionMatch), nil
 }
 
-// TODO: these "getters" should use a verb to signal possible errors
-func prevBumpCommitHash() string {
+func getPrevBumpCommitHash() string {
   grepArg := "--grep=" + config.BumpVersionMsg
   formatArg := "--pretty=format:%H"
 
@@ -131,7 +130,7 @@ func prevBumpCommitHash() string {
 
   outStr := string(out)
   outLines := strings.Split(outStr, "\n")
-  if len(outLines) == 1 && outLines[0] == "" { // TODO: no parenthesis
+  if len(outLines) == 1 && outLines[0] == "" {
     return ""
   }
 
@@ -168,7 +167,7 @@ func collectLogMsgs(prevCommitHash string) []string {
   return logMsgs
 }
 
-func versionLogHeader(version string) string {
+func getVersionLogHeader(version string) string {
   today := time.Now().Format("2006-01-02")
   return config.VersionHeader + version + " - " + today
 }
@@ -216,14 +215,14 @@ func writeTempLogFile(tempLogFile *os.File, newVersionHeader string,
 }
 
 func AppendToChangelog(commitMsgPath string) {
-  newVersion, err := newVersion(commitMsgPath)
+  newVersion, err := getNewVersion(commitMsgPath)
   if err != nil {
     fmt.Println(err)
     os.Exit(0)
   }
-  newVersionHeader := versionLogHeader(newVersion)
+  newVersionHeader := getVersionLogHeader(newVersion)
 
-  prevHash := prevBumpCommitHash()
+  prevHash := getPrevBumpCommitHash()
   logMsgs := collectLogMsgs(prevHash)
 
   randNumber := strconv.Itoa(rand.Int())
