@@ -3,6 +3,7 @@ package main
 import (
   "bufio"
   "encoding/json"
+  "flag"
   "fmt"
   "io"
   "log"
@@ -137,6 +138,26 @@ func getPrevBumpCommitHash() string {
   return outLines[0]
 }
 
+func getCurrentGitBranch() string {
+  cmd := exec.Command("git", "branch", "--show-current")
+  output, err := cmd.Output()
+  if err != nil {
+    log.Fatalln("Could not get the current Git branch")
+  }
+  return strings.TrimSpace(string(output))
+}
+
+func getFirstBranchCommitHash(branchName string) string {
+  interval := "master.." + branchName
+  cmd := exec.Command("git", "log", interval, "--oneline", "|", "tail", "-1")
+  out, err := cmd.Output()
+  if err != nil {
+    log.Fatalln("Could not read the previous bump-commit hash")
+  }
+
+  return strings.TrimSpace(string(out))
+}
+
 func collectLogMsgs(prevCommitHash string) []string {
   lowerLimit := ""
   if len(prevCommitHash) > 0 {
@@ -240,16 +261,51 @@ func AppendToChangelog(commitMsgPath string) {
   }
 }
 
-// TODO: create tag for bump-version commit
+func writeBranchChangelog() {
+  currentBranch := getCurrentGitBranch()
+  prevHash := getFirstBranchCommitHash(currentBranch)
+  logMsgs := collectLogMsgs(prevHash)
 
+  // TODO: use config relative path
+  branchLogFile, err := os.Create(currentBranch + "-CHANGELOG.md")
+  if err != nil {
+    log.Fatalln("Could not create branch changelog")
+  }
+  defer branchLogFile.Close()
+
+  for i := 0; i < len(logMsgs); i++ {
+    line := "* " + logMsgs[i] + "\n"
+    fmt.Print(line)
+    _, err = branchLogFile.WriteString(line)
+    if err != nil {
+      log.Fatal(err)
+    }
+  }
+}
+
+func parseCliArgsAndRun() {
+  branchModePtr := flag.Bool("branch", false, "Use all commits from the current branch")
+  flag.Parse()
+
+  if len(os.Args) == 1 {
+    log.Fatal("Please provide the commit message file or specify branch mode with `-branch`")
+  }
+
+  if *branchModePtr {
+    writeBranchChangelog()    
+    return
+  }
+  
+  AppendToChangelog(os.Args[1])
+
+}
+
+// TODO: create tag for bump-version commit
 func main() {
   err := readConfig()
   if err != nil {
     log.Fatal(err)
   }
 
-  if len(os.Args) == 1 {
-    log.Fatal("Please provide the commit message file")
-  }
-  AppendToChangelog(os.Args[1])
+  parseCliArgsAndRun()
 }
