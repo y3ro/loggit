@@ -2,19 +2,19 @@ package main
 
 import (
   "bufio"
-	"encoding/json"
-	"fmt"
-	"io"
-	"log"
+  "encoding/json"
+  "fmt"
+  "io"
+  "log"
   "math/rand"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"regexp"
-	"runtime"
+  "os"
+  "os/exec"
+  "path/filepath"
+  "regexp"
+  "runtime"
   "strconv"
-	"strings"
-	"time"
+  "strings"
+  "time"
 )
 
 const (
@@ -239,6 +239,8 @@ func AppendToChangelog(commitMsgPath string) {
     log.Fatal(err)
   }
 }
+
+// TODO: create tag for bump-version commit
 
 func main() {
   err := readConfig()
