@@ -236,7 +236,7 @@ func writeTempLogFile(tempLogFile *os.File, newVersionHeader string,
 }
 
 func CreateNewVersionGitTag(newVersion string) {
-  cmd := exec.Command("git", "tag", "-a", newVersion)
+  cmd := exec.Command("git", "tag", newVersion)
   out, err := cmd.Output()
   if err != nil {
     log.Fatalln("Could not create a new tag")
