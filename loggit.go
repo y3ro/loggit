@@ -149,7 +149,8 @@ func getCurrentGitBranch() string {
 
 func getFirstBranchCommitHash(branchName string) string {
   interval := "master.." + branchName
-  cmd := exec.Command("git", "log", interval, "--oneline", "|", "tail", "-1")
+  formatArg := "--pretty=format:%H"
+  cmd := exec.Command("git", "log", interval, formatArg, "|", "tail", "-1")
   out, err := cmd.Output()
   if err != nil {
     log.Fatalln("Could not read the previous bump-commit hash")
