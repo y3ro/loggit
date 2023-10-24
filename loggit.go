@@ -261,7 +261,7 @@ func AppendToChangelog(commitMsgPath string) {
   }
 }
 
-func writeBranchChangelog() {
+func WriteBranchChangelog() {
   currentBranch := getCurrentGitBranch()
   prevHash := getFirstBranchCommitHash(currentBranch)
   logMsgs := collectLogMsgs(prevHash)
@@ -292,7 +292,7 @@ func parseCliArgsAndRun() {
   }
 
   if *branchModePtr {
-    writeBranchChangelog()    
+    WriteBranchChangelog()
     return
   }
   
