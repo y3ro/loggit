@@ -52,17 +52,20 @@ func getHomePath() string {
 	return filepath.Join(os.Getenv(homePath), ".config")
 }
 
-func readConfig() error {
-	configDir := getHomePath()
-	err := os.MkdirAll(configDir, os.ModePerm)
-	if err != nil {
-		err = fmt.Errorf("Error mkdir'ing in readConfig: %w", err)
-		return nil
-	}
+func readConfig(configPath string) error {
+  if len(configPath) == 0 {
+    configDir := getHomePath() // TODO: first try the root of the repo looking for the file
+    err := os.MkdirAll(configDir, os.ModePerm)
+    if err != nil {
+      err = fmt.Errorf("Error mkdir'ing in readConfig: %w", err)
+      return nil
+    }
 
-	configFilePath := filepath.Join(configDir, configFileName)
-	configFile, err := os.Open(configFilePath)
-	if err == nil {
+    configPath = filepath.Join(configDir, configFileName)
+  }
+
+  configFile, err := os.Open(configPath)
+  if err == nil {
     defer configFile.Close()
 
     configBytes, err := io.ReadAll(configFile)
@@ -76,25 +79,25 @@ func readConfig() error {
       err = fmt.Errorf("Error unmarshalling in readConfig: %w", err)
       return err
     }
-	}
- 
-	if config.BumpVersionMsg == "" {
-    config.BumpVersionMsg = defaultBumpVersionMsg
-	}
-	if config.LogGitTrailer == "" {
-    config.LogGitTrailer = defaultLogGitTrailer
-	}
-	if config.VersionHeader == "" {
-    config.VersionHeader = defaultVersionHeader
-	}
-	if config.VersionRegexp == nil {
-    config.VersionRegexp = regexp.MustCompile(defaultVersionRegexStr)
-	}
-	if config.ChangelogRelativePath == "" {
-    config.ChangelogRelativePath = defaultChangelogRelativePath
-	}
+  }
 
-	return nil
+  if config.BumpVersionMsg == "" {
+    config.BumpVersionMsg = defaultBumpVersionMsg
+  }
+  if config.LogGitTrailer == "" {
+    config.LogGitTrailer = defaultLogGitTrailer
+  }
+  if config.VersionHeader == "" {
+    config.VersionHeader = defaultVersionHeader
+  }
+  if config.VersionRegexp == nil {
+    config.VersionRegexp = regexp.MustCompile(defaultVersionRegexStr)
+  }
+  if config.ChangelogRelativePath == "" {
+    config.ChangelogRelativePath = defaultChangelogRelativePath
+  }
+
+  return nil
 }
 
 func getNewVersion(commitMsgPath string) (string, error) {
@@ -308,10 +311,16 @@ func WriteBranchChangelog() {
 func parseCliArgsAndRun() {
   branchModePtr := flag.Bool("branch", false, "Use all commits from the current branch")
   avoidCreatingTagPtr := flag.Bool("no-tag", false, "Do not create a tag on bump version")
+  configPathPtr := flag.String("config", "", "Path to the configuration file")
   flag.Parse()
 
   if len(os.Args) == 1 {
     log.Fatal("Please provide the commit message file or specify branch mode with `-branch`")
+  }
+
+  err := readConfig(*configPathPtr)
+  if err != nil {
+    log.Fatal(err)
   }
 
   if *branchModePtr {
@@ -324,10 +333,5 @@ func parseCliArgsAndRun() {
 }
 
 func main() {
-  err := readConfig()
-  if err != nil {
-    log.Fatal(err)
-  }
-
   parseCliArgsAndRun()
 }
