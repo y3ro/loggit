@@ -235,6 +235,17 @@ func writeTempLogFile(tempLogFile *os.File, newVersionHeader string,
   tempLogFile.Sync()
 }
 
+func CreateNewVersionGitTag(newVersion string) {
+  cmd := exec.Command("git", "tag", "-a", newVersion)
+  out, err := cmd.Output()
+  if err != nil {
+    log.Fatalln("Could not create a new tag")
+  }
+  if len(out) > 0 {
+    log.Fatal(string(out))
+  }
+}
+
 func AppendToChangelog(commitMsgPath string) {
   newVersion, err := getNewVersion(commitMsgPath)
   if err != nil {
@@ -259,6 +270,8 @@ func AppendToChangelog(commitMsgPath string) {
   if err != nil {
     log.Fatal(err)
   }
+
+  CreateNewVersionGitTag(newVersion)
 }
 
 func WriteBranchChangelog() {
@@ -283,6 +296,8 @@ func WriteBranchChangelog() {
   }
 }
 
+// TODO: add option to avoid creating the tag
+
 func parseCliArgsAndRun() {
   branchModePtr := flag.Bool("branch", false, "Use all commits from the current branch")
   flag.Parse()
@@ -300,7 +315,6 @@ func parseCliArgsAndRun() {
 
 }
 
-// TODO: create tag for bump-version commit
 func main() {
   err := readConfig()
   if err != nil {
