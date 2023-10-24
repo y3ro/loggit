@@ -38,7 +38,7 @@ type Config struct {
   LogGitTrailer string
   ChangelogRelativePath string
   VersionHeader string
-  masterBranchName string
+  MasterBranchName string
 }
 
 func getHomePath() string {
@@ -97,6 +97,10 @@ func readConfig(configPath string) error {
     config.ChangelogRelativePath = defaultChangelogRelativePath
   }
 
+  if config.MasterBranchName == "" {
+    config.MasterBranchName = defaultMasterBranchName
+  }
+
   return nil
 }
 
@@ -153,9 +157,9 @@ func getCurrentGitBranch() string {
 }
 
 func getFirstBranchCommitHash(branchName string) string {
-  interval := config.masterBranchName + ".." + branchName
+  interval := config.MasterBranchName + ".." + branchName
   formatArg := "--pretty=format:%H"
-  cmd := exec.Command("git", "log", interval, formatArg, "|", "tail", "-1")
+  cmd := exec.Command("git", "log", interval, formatArg, "|", "tail", "-1") // TODO: pipe does not work here
   out, err := cmd.Output()
   if err != nil {
     log.Fatalln("Could not read the previous bump-commit hash")
