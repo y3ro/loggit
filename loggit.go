@@ -24,6 +24,7 @@ const (
   defaultLogGitTrailer = "log:"
   defaultChangelogRelativePath = "CHANGELOG.md"
   defaultVersionHeader = "# Version "
+  defaultMasterBranchName = "master"
   configFileName = "loggit.json"
 )
 
@@ -37,6 +38,7 @@ type Config struct {
   LogGitTrailer string
   ChangelogRelativePath string
   VersionHeader string
+  masterBranchName string
 }
 
 func getHomePath() string {
@@ -148,7 +150,7 @@ func getCurrentGitBranch() string {
 }
 
 func getFirstBranchCommitHash(branchName string) string {
-  interval := "master.." + branchName
+  interval := config.masterBranchName + ".." + branchName
   formatArg := "--pretty=format:%H"
   cmd := exec.Command("git", "log", interval, formatArg, "|", "tail", "-1")
   out, err := cmd.Output()
