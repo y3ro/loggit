@@ -246,7 +246,7 @@ func CreateNewVersionGitTag(newVersion string) {
   }
 }
 
-func AppendToChangelog(commitMsgPath string) {
+func AppendToChangelog(commitMsgPath string, createTag bool) {
   newVersion, err := getNewVersion(commitMsgPath)
   if err != nil {
     fmt.Println(err)
@@ -271,7 +271,9 @@ func AppendToChangelog(commitMsgPath string) {
     log.Fatal(err)
   }
 
-  CreateNewVersionGitTag(newVersion)
+  if createTag {
+    CreateNewVersionGitTag(newVersion)
+  }
 }
 
 func WriteBranchChangelog() {
@@ -296,10 +298,9 @@ func WriteBranchChangelog() {
   }
 }
 
-// TODO: add option to avoid creating the tag
-
 func parseCliArgsAndRun() {
   branchModePtr := flag.Bool("branch", false, "Use all commits from the current branch")
+  avoidCreatingTagPtr := flag.Bool("no-tag", false, "Do not create a tag on bump version")
   flag.Parse()
 
   if len(os.Args) == 1 {
@@ -311,7 +312,7 @@ func parseCliArgsAndRun() {
     return
   }
   
-  AppendToChangelog(os.Args[1])
+  AppendToChangelog(os.Args[1], !*avoidCreatingTagPtr)
 
 }
 
