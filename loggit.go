@@ -281,8 +281,12 @@ func WriteBranchChangelog() {
   prevHash := getFirstBranchCommitHash(currentBranch)
   logMsgs := collectLogMsgs(prevHash)
 
-  // TODO: use config relative path
-  branchLogFile, err := os.Create(currentBranch + "-CHANGELOG.md")
+  _, logFileName := filepath.Split(config.ChangelogRelativePath)
+  if len(logFileName) == 0 {
+    _, logFileName = filepath.Split(defaultChangelogRelativePath)
+  }
+
+  branchLogFile, err := os.Create(currentBranch + "-" + logFileName)
   if err != nil {
     log.Fatalln("Could not create branch changelog")
   }
