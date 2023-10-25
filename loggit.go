@@ -22,6 +22,7 @@ const (
   defaultBumpVersionMsg = "Bump version"
   defaultVersionRegexStr = "\\d+\\.\\d+\\.\\d+"
   defaultLogGitTrailer = "log:"
+  defaultUseCommitTitleMsg = "*"
   defaultChangelogRelativePath = "CHANGELOG.md"
   defaultVersionHeader = "# Version "
   defaultMasterBranchName = "master"
@@ -36,6 +37,7 @@ type Config struct {
   BumpVersionMsg string
   VersionRegexp *regexp.Regexp
   LogGitTrailer string
+  UseCommitTitleMsg string
   ChangelogRelativePath string
   VersionHeader string
   MasterBranchName string
@@ -86,6 +88,9 @@ func readConfig(configPath string) error {
   }
   if config.LogGitTrailer == "" {
     config.LogGitTrailer = defaultLogGitTrailer
+  }
+  if config.UseCommitTitleMsg == "" {
+    config.UseCommitTitleMsg = defaultUseCommitTitleMsg
   }
   if config.VersionHeader == "" {
     config.VersionHeader = defaultVersionHeader
@@ -175,6 +180,7 @@ func getFirstBranchCommitHash(branchName string) string {
   return outLines[nLines - 1]
 }
 
+// TODO: reduce complexity
 func collectLogMsgs(prevCommitHash string) []string {
   lowerLimit := ""
   if len(prevCommitHash) > 0 {
@@ -182,24 +188,50 @@ func collectLogMsgs(prevCommitHash string) []string {
   }
   commitsInterval := lowerLimit + "HEAD"
   grepArg := "--grep=" + config.LogGitTrailer
-  formatArg := "--pretty=format:%b"
+  formatSubjectArg := "--pretty=format:%s"
+  formatBodyArg := "--pretty=format:%b"
 
-  cmd := exec.Command("git", "log", commitsInterval, grepArg, formatArg)
-  out, err := cmd.Output()
+  cmd := exec.Command("git", "log", commitsInterval, grepArg, formatBodyArg)
+  bodyOut, err := cmd.Output()
   if err != nil {
-    log.Fatalln("Failed to collect log messages")
+    log.Fatalln("Failed to collect log messages (bodies)")
   }
 
-  outStr := strings.TrimSpace(string(out))
-  outLines := strings.Split(outStr, "\n")
+  cmd = exec.Command("git", "log", commitsInterval, grepArg, formatSubjectArg)
+  subjectOut, err := cmd.Output()
+  if err != nil {
+    log.Fatalln("Failed to collect log messages (subjects)")
+  }
+
   gitTrailerLen := len(config.LogGitTrailer)
+  outStr := strings.TrimSpace(string(bodyOut))
+  outLineAllBodies := strings.Split(outStr, "\n")
+  var outLineBodies []string
+  for i := 0; i < len(outLineAllBodies); i++ {
+    body := outLineAllBodies[i]
+    if len(body) > 0 {
+      outLineBodies = append(outLineBodies, body)
+    }
+  }
+
+  outStr = strings.TrimSpace(string(subjectOut))
+  outLineSubjects := strings.Split(outStr, "\n")
+
+  if len(outLineBodies) != len(outLineSubjects) {
+    log.Fatalln("Different number of commit bodies and subjects")
+  }
 
   var logMsgs []string
-  for i := 0; i < len(outLines); i++ {
-    line := outLines[i]
-    if strings.HasPrefix(line, config.LogGitTrailer) {
-      // TODO: if the log message is '*', use the commit title 
-      logMsgs = append(logMsgs, line[gitTrailerLen:])
+  for i := 0; i < len(outLineBodies); i++ {
+    bodyMsg := outLineBodies[i]
+    subjectMsg := outLineSubjects[i]
+    if strings.HasPrefix(bodyMsg, config.LogGitTrailer) {
+      logMsg := strings.TrimSpace(bodyMsg[gitTrailerLen:])
+      if logMsg == config.UseCommitTitleMsg {
+	logMsgs = append(logMsgs, subjectMsg)
+      } else {
+	logMsgs = append(logMsgs, logMsg)
+      }
     }
   }
 
