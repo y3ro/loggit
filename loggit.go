@@ -157,15 +157,22 @@ func getCurrentGitBranch() string {
 }
 
 func getFirstBranchCommitHash(branchName string) string {
-  interval := config.MasterBranchName + ".." + branchName
+  interval := config.MasterBranchName + "~.." + branchName
   formatArg := "--pretty=format:%H"
-  cmd := exec.Command("git", "log", interval, formatArg, "|", "tail", "-1") // TODO: pipe does not work here
+  cmd := exec.Command("git", "log", interval, formatArg)
   out, err := cmd.Output()
   if err != nil {
-    log.Fatalln("Could not read the previous bump-commit hash")
+    log.Fatalln("Could not read the previous bump-commit hash") // TODO: print stderr (string(err.Strderr))
   }
 
-  return strings.TrimSpace(string(out))
+  outStr := string(out)
+  outLines := strings.Split(outStr, "\n") 
+  nLines := len(outLines)
+  if nLines == 0 || outLines[nLines - 1] == "" {
+    log.Fatalln("Could not read the first commit hash of the current branch")
+  }
+
+  return outLines[nLines - 1]
 }
 
 func collectLogMsgs(prevCommitHash string) []string {
@@ -191,6 +198,7 @@ func collectLogMsgs(prevCommitHash string) []string {
   for i := 0; i < len(outLines); i++ {
     line := outLines[i]
     if strings.HasPrefix(line, config.LogGitTrailer) {
+      // TODO: if the log message is '*', use the commit title 
       logMsgs = append(logMsgs, line[gitTrailerLen:])
     }
   }
