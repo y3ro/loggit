@@ -43,7 +43,7 @@ type Config struct {
   MasterBranchName string
 }
 
-func getHomePath() string {
+func getConfigDir() string {
 	var homePath string
 	if runtime.GOOS == "windows" {
 		homePath = "HOMEPATH"
@@ -56,7 +56,7 @@ func getHomePath() string {
 
 func readConfig(configPath string) error {
   if len(configPath) == 0 {
-    configDir := getHomePath() // TODO: first try the root of the repo looking for the file
+    configDir := getConfigDir() // TODO: first try the root of the repo looking for the file
     err := os.MkdirAll(configDir, os.ModePerm)
     if err != nil {
       err = fmt.Errorf("Error mkdir'ing in readConfig: %w", err)
