@@ -1,21 +1,22 @@
 package main
 
 import (
-  "bufio"
-  "encoding/json"
-  "flag"
-  "fmt"
-  "io"
-  "log"
-  "math/rand"
-  "os"
-  "os/exec"
-  "path/filepath"
-  "regexp"
-  "runtime"
-  "strconv"
-  "strings"
-  "time"
+	"bufio"
+	"encoding/json"
+	"errors"
+	"flag"
+	"fmt"
+	"io"
+	"log"
+	"math/rand"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"runtime"
+	"strconv"
+	"strings"
+	"time"
 )
 
 const (
@@ -147,8 +148,9 @@ func getPrevBumpCommitHash() string {
 
   cmd := exec.Command("git", "log", grepArg, "-n", "1", formatArg)
   out, err := cmd.Output()
-  if err != nil {
-    log.Fatalln("Could not read the previous bump-commit hash")
+  var exitError *exec.ExitError
+  if errors.As(err, &exitError) {
+    log.Fatalf("Could not read the previous bump-commit hash: %s\n", string(exitError.Stderr))
   }
 
   outStr := string(out)
@@ -163,8 +165,9 @@ func getPrevBumpCommitHash() string {
 func getCurrentGitBranch() string {
   cmd := exec.Command("git", "branch", "--show-current")
   output, err := cmd.Output()
-  if err != nil {
-    log.Fatalln("Could not get the current Git branch")
+  var exitError *exec.ExitError
+  if errors.As(err, &exitError) {
+    log.Fatalf("Could not get the current Git branch: %s\n", string(exitError.Stderr))
   }
   return strings.TrimSpace(string(output))
 }
@@ -174,8 +177,9 @@ func getFirstBranchCommitHash(branchName string) string {
   formatArg := "--pretty=format:%H"
   cmd := exec.Command("git", "log", interval, formatArg)
   out, err := cmd.Output()
-  if err != nil {
-    log.Fatalln("Could not read the previous bump-commit hash") // TODO: print stderr (string(err.Strderr))
+  var exitError *exec.ExitError
+  if errors.As(err, &exitError) {
+    log.Fatalf("Could not read the previous bump-commit hash: %s\n", string(exitError.Stderr))
   }
 
   outStr := string(out)
@@ -201,14 +205,15 @@ func collectLogMsgs(prevCommitHash string) []string {
 
   cmd := exec.Command("git", "log", commitsInterval, grepArg, formatBodyArg)
   bodyOut, err := cmd.Output()
-  if err != nil {
-    log.Fatalln("Failed to collect log messages (bodies)")
+  var exitError *exec.ExitError
+  if errors.As(err, &exitError) {
+    log.Fatalf("Failed to collect log messages (bodies): %s\n", string(exitError.Stderr))
   }
 
   cmd = exec.Command("git", "log", commitsInterval, grepArg, formatSubjectArg)
   subjectOut, err := cmd.Output()
-  if err != nil {
-    log.Fatalln("Failed to collect log messages (subjects)")
+  if errors.As(err, &exitError) {
+    log.Fatalf("Failed to collect log messages (subjects): %s\n", string(exitError.Stderr))
   }
 
   gitTrailerLen := len(config.LogGitTrailer)
@@ -296,8 +301,9 @@ func writeTempLogFile(tempLogFile *os.File, newVersionHeader string,
 func CreateNewVersionGitTag(newVersion string) {
   cmd := exec.Command("git", "tag", newVersion)
   out, err := cmd.Output()
-  if err != nil {
-    log.Fatalln("Could not create a new tag")
+  var exitError *exec.ExitError
+  if errors.As(err, &exitError) {
+    log.Fatalf("Could not create a new tag: %s\n", string(exitError.Stderr))
   }
   if len(out) > 0 {
     log.Fatal(string(out))
