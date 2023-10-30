@@ -54,18 +54,31 @@ func getConfigDir() string {
 	return filepath.Join(os.Getenv(homePath), ".config")
 }
 
+// TODO: reduce complexity
 func readConfig(configPath string) {
+  var configFile *os.File
+  var err error
   if len(configPath) == 0 {
-    configDir := getConfigDir() // TODO: first try the root of the repo looking for the file
-    err := os.MkdirAll(configDir, os.ModePerm)
-    if err != nil {
-      log.Fatalf("Error mkdir'ing in readConfig: %s\n", err)
+    cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+    out, err := cmd.Output()
+    if err == nil {
+      repoRoot := strings.TrimSpace(string(out))
+      configPath = filepath.Join(repoRoot, configFileName) 
+      configFile, err = os.Open(configPath)
     }
 
-    configPath = filepath.Join(configDir, configFileName)
+    if err != nil {
+      configDir := getConfigDir()
+      err := os.MkdirAll(configDir, os.ModePerm)
+      if err != nil {
+	log.Fatalf("Error mkdir'ing in readConfig: %s\n", err)
+      }
+
+      configPath = filepath.Join(configDir, configFileName)
+      configFile, err = os.Open(configPath)
+    }
   }
 
-  configFile, err := os.Open(configPath)
   if err == nil {
     defer configFile.Close()
 
