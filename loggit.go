@@ -54,13 +54,12 @@ func getConfigDir() string {
 	return filepath.Join(os.Getenv(homePath), ".config")
 }
 
-func readConfig(configPath string) error {
+func readConfig(configPath string) {
   if len(configPath) == 0 {
     configDir := getConfigDir() // TODO: first try the root of the repo looking for the file
     err := os.MkdirAll(configDir, os.ModePerm)
     if err != nil {
-      err = fmt.Errorf("Error mkdir'ing in readConfig: %w", err)
-      return nil
+      log.Fatalf("Error mkdir'ing in readConfig: %s\n", err)
     }
 
     configPath = filepath.Join(configDir, configFileName)
@@ -72,14 +71,12 @@ func readConfig(configPath string) error {
 
     configBytes, err := io.ReadAll(configFile)
     if err != nil {
-      err = fmt.Errorf("Error reading config file in readConfig: %w", err)
-      return err
+      log.Fatalf("Error reading config file in readConfig: %s\n", err)
     }
 
     err = json.Unmarshal(configBytes, &config)
     if err != nil {
-      err = fmt.Errorf("Error unmarshalling in readConfig: %w", err)
-      return err
+      log.Fatalf("Error unmarshalling in readConfig: %s\n", err)
     }
   }
 
@@ -105,8 +102,6 @@ func readConfig(configPath string) error {
   if config.MasterBranchName == "" {
     config.MasterBranchName = defaultMasterBranchName
   }
-
-  return nil
 }
 
 func getNewVersion(commitMsgPath string) (string, error) {
@@ -362,10 +357,7 @@ func parseCliArgsAndRun() {
     log.Fatal("Please provide the commit message file or specify branch mode with `-branch`")
   }
 
-  err := readConfig(*configPathPtr)
-  if err != nil {
-    log.Fatal(err)
-  }
+  readConfig(*configPathPtr)
 
   if *branchModePtr {
     WriteBranchChangelog()
