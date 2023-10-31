@@ -19,7 +19,7 @@ You can use `loggit` to populate a version changelog and also branch changelogs.
 
 ### Version changelog
 
-Collect log entries starting from the last "bump-version" commit.
+Collect log entries starting from the last "bump-version" commit. By default, it will also create the corresponding version tag.
 
 Quick example:
 
