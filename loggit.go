@@ -62,8 +62,9 @@ func readConfig(configPath string) {
   var configFile *os.File
   var err error
   if len(configPath) == 0 {
+    var out []byte
     cmd := exec.Command("git", "rev-parse", "--show-toplevel")
-    out, err := cmd.Output()
+    out, err = cmd.Output()
     if err == nil {
       repoRoot := strings.TrimSpace(string(out))
       configPath = filepath.Join(repoRoot, configFileName) 
@@ -72,7 +73,7 @@ func readConfig(configPath string) {
 
     if err != nil {
       configDir := getConfigDir()
-      err := os.MkdirAll(configDir, os.ModePerm)
+      err = os.MkdirAll(configDir, os.ModePerm)
       if err != nil {
 	log.Fatalf("Error mkdir'ing in readConfig: %s\n", err)
       }
