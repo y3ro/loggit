@@ -32,16 +32,18 @@ const (
 
 var (
   config Config
+  defaultAlsoTag = true
 )
 
 type Config struct {
   BumpVersionMsg string
-  VersionRegexp *regexp.Regexp
+  VersionRegexp *regexp.Regexp // TODO: fix
   LogGitTrailer string
   UseCommitTitleMsg string
   ChangelogRelativePath string
   VersionHeader string
   MasterBranchName string
+  AlsoTag *bool
 }
 
 func getConfigDir() string {
@@ -112,9 +114,11 @@ func readConfig(configPath string) {
   if config.ChangelogRelativePath == "" {
     config.ChangelogRelativePath = defaultChangelogRelativePath
   }
-
   if config.MasterBranchName == "" {
     config.MasterBranchName = defaultMasterBranchName
+  }
+  if config.AlsoTag == nil {
+    config.AlsoTag = &defaultAlsoTag
   }
 }
 
@@ -310,7 +314,7 @@ func CreateNewVersionGitTag(newVersion string) {
   }
 }
 
-func AppendToChangelog(commitMsgPath string, createTag bool) {
+func AppendToChangelog(commitMsgPath string, alsoTag bool) {
   newVersion, err := getNewVersion(commitMsgPath)
   if err != nil {
     fmt.Println(err)
@@ -335,7 +339,7 @@ func AppendToChangelog(commitMsgPath string, createTag bool) {
     log.Fatal(err)
   }
 
-  if createTag {
+  if alsoTag {
     CreateNewVersionGitTag(newVersion)
   }
 }
@@ -368,7 +372,6 @@ func WriteBranchChangelog() {
 
 func parseCliArgsAndRun() {
   branchModePtr := flag.Bool("branch", false, "Use all commits from the current branch")
-  avoidCreatingTagPtr := flag.Bool("no-tag", false, "Do not create a tag on bump version")
   configPathPtr := flag.String("config", "", "Path to the configuration file")
   flag.Parse()
 
@@ -383,7 +386,7 @@ func parseCliArgsAndRun() {
     return
   }
   
-  AppendToChangelog(os.Args[1], !*avoidCreatingTagPtr)
+  AppendToChangelog(os.Args[1], *config.AlsoTag)
 
 }
 
