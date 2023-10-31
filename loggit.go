@@ -23,7 +23,7 @@ const (
   defaultBumpVersionMsg = "Bump version"
   defaultVersionRegexStr = "\\d+\\.\\d+\\.\\d+"
   defaultLogGitTrailer = "log:"
-  defaultUseCommitTitleMsg = "*"
+  defaultUseCommitTitleMsg = "%s"
   defaultChangelogRelativePath = "CHANGELOG.md"
   defaultVersionHeader = "# Version "
   defaultMasterBranchName = "master"
