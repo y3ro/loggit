@@ -21,7 +21,7 @@ import (
 
 const (
   defaultBumpVersionMsg = "Bump version"
-  defaultVersionRegexStr = "\\d+\\.\\d+\\.\\d+"
+  defaultVersionRegexpStr = "\\d+\\.\\d+\\.\\d+"
   defaultLogGitTrailer = "log:"
   defaultUseCommitTitleMsg = "%s"
   defaultChangelogRelativePath = "CHANGELOG.md"
@@ -37,7 +37,7 @@ var (
 
 type Config struct {
   BumpVersionMsg string
-  VersionRegexp *regexp.Regexp // TODO: fix
+  VersionRegexpStr string
   LogGitTrailer string
   UseCommitTitleMsg string
   ChangelogRelativePath string
@@ -108,8 +108,8 @@ func readConfig(configPath string) {
   if config.VersionHeader == "" {
     config.VersionHeader = defaultVersionHeader
   }
-  if config.VersionRegexp == nil {
-    config.VersionRegexp = regexp.MustCompile(defaultVersionRegexStr)
+  if config.VersionRegexpStr == "" {
+    config.VersionRegexpStr = defaultVersionRegexpStr
   }
   if config.ChangelogRelativePath == "" {
     config.ChangelogRelativePath = defaultChangelogRelativePath
@@ -138,7 +138,8 @@ func getNewVersion(commitMsgPath string) (string, error) {
     return "", fmt.Errorf("No new version in this commit")
   }
 
-  versionMatch := config.VersionRegexp.Find(commitMsgBytes)  
+  versionRegexp := regexp.MustCompile(config.VersionRegexpStr)
+  versionMatch := versionRegexp.Find(commitMsgBytes)  
   if len(versionMatch) == 0 {
     log.Fatalln("Invalid format for new version in this commit")
   }
