@@ -57,46 +57,7 @@ func getConfigDir() string {
 	return filepath.Join(os.Getenv(homePath), ".config")
 }
 
-// TODO: reduce complexity
-func readConfig(configPath string) {
-	var configFile *os.File
-	var err error
-	if len(configPath) == 0 {
-		var out []byte
-		cmd := exec.Command("git", "rev-parse", "--show-toplevel")
-		out, err = cmd.Output()
-		if err == nil {
-			repoRoot := strings.TrimSpace(string(out))
-			configPath = filepath.Join(repoRoot, configFileName)
-			configFile, err = os.Open(configPath)
-		}
-
-		if err != nil {
-			configDir := getConfigDir()
-			err = os.MkdirAll(configDir, os.ModePerm)
-			if err != nil {
-				log.Fatalf("Error mkdir'ing in readConfig: %s\n", err)
-			}
-
-			configPath = filepath.Join(configDir, configFileName)
-			configFile, err = os.Open(configPath)
-		}
-	}
-
-	if err == nil {
-		defer configFile.Close()
-
-		configBytes, err := io.ReadAll(configFile)
-		if err != nil {
-			log.Fatalf("Error reading config file in readConfig: %s\n", err)
-		}
-
-		err = json.Unmarshal(configBytes, &config)
-		if err != nil {
-			log.Fatalf("Error unmarshalling in readConfig: %s\n", err)
-		}
-	}
-
+func setNilConfigFields(config *Config) {
 	if config.BumpVersionMsg == "" {
 		config.BumpVersionMsg = defaultBumpVersionMsg
 	}
@@ -121,6 +82,65 @@ func readConfig(configPath string) {
 	if config.AlsoTag == nil {
 		config.AlsoTag = &defaultAlsoTag
 	}
+}
+
+func openDefaultConfigFile() (*os.File, error) {
+	var (
+		configPath string
+		configFile *os.File
+		out        []byte
+		err        error
+	)
+
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	out, err = cmd.Output()
+	if err == nil {
+		repoRoot := strings.TrimSpace(string(out))
+		configPath = filepath.Join(repoRoot, configFileName)
+		configFile, err = os.Open(configPath)
+	}
+
+	if err != nil {
+		configDir := getConfigDir()
+		err = os.MkdirAll(configDir, os.ModePerm)
+		if err != nil {
+			log.Fatalf("Error mkdir'ing in readConfig: %s\n", err)
+		}
+
+		configPath = filepath.Join(configDir, configFileName)
+		configFile, err = os.Open(configPath)
+	}
+
+	return configFile, err
+}
+
+func readConfig(configPath string) {
+	var (
+		configFile *os.File
+		err        error
+	)
+
+	if len(configPath) == 0 {
+		configFile, err = openDefaultConfigFile()
+	} else {
+		configFile, err = os.Open(configPath)
+	}
+
+	if err == nil {
+		defer configFile.Close()
+
+		configBytes, err := io.ReadAll(configFile)
+		if err != nil {
+			log.Fatalf("Error reading config file in readConfig: %s\n", err)
+		}
+
+		err = json.Unmarshal(configBytes, &config)
+		if err != nil {
+			log.Fatalf("Error unmarshalling in readConfig: %s\n", err)
+		}
+	}
+
+	setNilConfigFields(&config)
 }
 
 func getNewVersion(commitMsgPath string) (string, error) {
