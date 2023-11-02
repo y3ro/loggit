@@ -198,17 +198,23 @@ func getFirstBranchCommitHash(branchName string) string {
 	return outLines[nLines-1]
 }
 
-// TODO: reduce complexity
-func collectLogMsgs(prevCommitHash string) []string {
-	lowerLimit := ""
-	if len(prevCommitHash) > 0 {
-		lowerLimit = prevCommitHash + ".."
-	}
-	commitsInterval := lowerLimit + "HEAD"
-	grepArg := "--grep=" + config.LogGitTrailer
+func getGitCommitSubjects(commitsInterval string, grepArg string) []string {
 	formatSubjectArg := "--pretty=format:%s"
-	formatBodyArg := "--pretty=format:%b"
+	cmd := exec.Command("git", "log", commitsInterval, grepArg, formatSubjectArg)
+	subjectOut, err := cmd.Output()
+	var exitError *exec.ExitError
+	if errors.As(err, &exitError) {
+		log.Fatalf("Failed to collect log messages (subjects): %s\n", string(exitError.Stderr))
+	}
 
+	outStr := strings.TrimSpace(string(subjectOut))
+	outLineSubjects := strings.Split(outStr, "\n")
+
+	return outLineSubjects
+}
+
+func getGitCommitBodies(commitsInterval string, grepArg string) []string {
+	formatBodyArg := "--pretty=format:%b"
 	cmd := exec.Command("git", "log", commitsInterval, grepArg, formatBodyArg)
 	bodyOut, err := cmd.Output()
 	var exitError *exec.ExitError
@@ -216,13 +222,6 @@ func collectLogMsgs(prevCommitHash string) []string {
 		log.Fatalf("Failed to collect log messages (bodies): %s\n", string(exitError.Stderr))
 	}
 
-	cmd = exec.Command("git", "log", commitsInterval, grepArg, formatSubjectArg)
-	subjectOut, err := cmd.Output()
-	if errors.As(err, &exitError) {
-		log.Fatalf("Failed to collect log messages (subjects): %s\n", string(exitError.Stderr))
-	}
-
-	gitTrailerLen := len(config.LogGitTrailer)
 	outStr := strings.TrimSpace(string(bodyOut))
 	outLineAllBodies := strings.Split(outStr, "\n")
 	var outLineBodies []string
@@ -233,13 +232,24 @@ func collectLogMsgs(prevCommitHash string) []string {
 		}
 	}
 
-	outStr = strings.TrimSpace(string(subjectOut))
-	outLineSubjects := strings.Split(outStr, "\n")
+	return outLineBodies
+}
 
+func collectLogMsgs(prevCommitHash string) []string {
+	lowerLimit := ""
+	if len(prevCommitHash) > 0 {
+		lowerLimit = prevCommitHash + ".."
+	}
+	commitsInterval := lowerLimit + "HEAD"
+	grepArg := "--grep=" + config.LogGitTrailer
+
+	outLineSubjects := getGitCommitSubjects(commitsInterval, grepArg)
+	outLineBodies := getGitCommitBodies(commitsInterval, grepArg)
 	if len(outLineBodies) != len(outLineSubjects) {
 		log.Fatalln("Different number of commit bodies and subjects")
 	}
 
+	gitTrailerLen := len(config.LogGitTrailer)
 	var logMsgs []string
 	for i := 0; i < len(outLineBodies); i++ {
 		bodyMsg := outLineBodies[i]
